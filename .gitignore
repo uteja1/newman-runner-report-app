@@ -1,0 +1,11 @@
+.nyc_output
+coverage
+node_modules
+report/**
+npm-debug.log
+test/**/*_Results.txt
+.DS_Store
+utils/backup
+build/workspace/**
+WFchange_reports
+.idea/**

@@ -1,0 +1,73 @@
+[
+	{
+		"workFlowName": "LNAAS_DELETE_DIA_SERVICE_SL_V1",
+		"successResponseTaskId": "6142",
+		"failureResponseTaskId": "85ab",
+		"senarioName": "Delete_Dia_Senario",
+		"requestPayload": {
+			"parentCorrelationId": "SL-DIA-DELETE-TEST-1234",
+			"customerName": "SUNDAY UAT",
+			"customerNumber": "1-CP6I7Y",
+			"orderSource": "SWIFT",
+			"productOfferName": "DIA",
+			"productSubType": "internet",
+			"productInstanceId": "MVL-123456",
+			"orderId": "O-00026476",
+			"customerCommittedDate": "2021-05-10",
+			"customerRequestedDate": "2021-05-10",
+			"fulfillmentRequestNumber": "FR0014427-1",
+			"mainProductId": "442840513",
+			"orderVersion": "1",
+			"serviceOrderNumber": "O-00026477-MVL-029928",
+			"serviceAlias": "CO/IRXX/487184/LVLC",
+			"mtu": 1500,
+			"rateLimit": 100,
+			"ipv4TieDown": false,
+			"wanIPAddressBlocks": [
+				{
+					"ipVersion": "IPv4",
+					"ipAddressBlock": "8.47.139.244/30"
+				},
+				{
+					"ipVersion": "IPv6",
+					"ipAddressBlock": "2001:db8:1234:5000::ffff/12"
+				}
+			],
+			"staticRoutes": [
+				{
+					"route": "192.108.1.0/24",
+					"nextHop": "198.19.201.130",
+					"inject": "customer-static-bb2",
+					"ddos": false
+				}
+			],
+			"bgps": [
+				{
+					"neighbor": "198.19.201.130",
+					"asn": "10753",
+					"password": "must be MD5 compliant",
+					"teardown": "100",
+					"exportPolicies": [
+						"Default"
+					],
+					"bfd": {
+						"multiplier": "5",
+						"interval": "500ms"
+					},
+					"ddos": false,
+					"ttl": "2"
+				}
+			],
+			"secondaryIPAddressBlocks": [
+				{
+					"ipVersion": "IPv4",
+					"ipAddressBlock": "8.47.139.244/30"
+				},
+				{
+					"ipVersion": "IPv6",
+					"ipAddressBlock": "2001:db8:1234:5000::ffff/12"
+				}
+			]
+		}
+	}
+]

@@ -1,0 +1,654 @@
+{
+	"info": {
+		"_postman_id": "f7cdd066-55c2-4502-8243-f5658ae07181",
+		"name": "dia_collections",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "createToken",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//console.log(responseBody);\r",
+							"pm.collectionVariables.set(\"token\", responseBody);\r",
+							"\r",
+							"//Throw error when system is down and not able to generate token.Stop execution.\r",
+							"if(pm.response.code === 500) {\r",
+							"    throw new Error('Cannot generate token');\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"user\": {\r\n        \"username\": \"admin@pronghorn\",\r\n        \"password\": \"admin\"\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://10.122.65.194:3000/login",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "execute_workflow",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonBody = pm.response.json();\r",
+							"pm.collectionVariables.set(\"SLjobId\",jsonBody._id);\r",
+							"//console.log(jsonBody._id);\r",
+							"let url = \"http://titansdevcarrier.clcloud.af.qwest.net:4016/workflow_engine/viewer?job_id=\" + jsonBody._id;\r",
+							"\r",
+							"//logging senario name and url\r",
+							"console.log(\"Senario Name - \" + pm.iterationData.toObject().senarioName);\r",
+							"console.log(\"workFlow URL - \" + url);\r",
+							"\r",
+							"//when job is not present jobId is undefined.Throw error and stop execution. \r",
+							"if (jsonBody._id === undefined) {\r",
+							"    if(containsWord(jsonBody, \"Cannot\")) {\r",
+							"        throw new Error('This WorkFlow is not present');\r",
+							"    }\r",
+							"}\r",
+							"\r",
+							"//Check if a word is present in a sentance.\r",
+							"function containsWord(str, searchValue){\r",
+							"  str = str.replace(/[^a-z0-9 ]/gi, '');\r",
+							"  let words = str.split(/ /g);\r",
+							"  return words.indexOf(searchValue) > -1\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"workFlowName\", JSON.stringify(pm.iterationData.toObject().workFlowName));\r",
+							"pm.collectionVariables.set(\"jsonBody\", JSON.stringify(pm.iterationData.toObject().requestPayload));\r",
+							"pm.collectionVariables.set(\"successResponseTaskId\", JSON.stringify(pm.iterationData.toObject().successResponseTaskId));\r",
+							"pm.collectionVariables.set(\"failureResponseTaskId\", JSON.stringify(pm.iterationData.toObject().failureResponseTaskId));\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"options\": {\r\n\t\t\"description\": \"\",\r\n\t\t\"variables\": {\r\n\t\t\t\"requestPayload\": {{jsonBody}}\r\n\t\t}\r\n\t},\r\n\t\"groups\": [],\r\n\t\"type\": \"automation\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://10.122.65.194:3000/workflow_engine/startJobWithOptions/{{workFlowName}}?token={{token}}",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"workflow_engine",
+						"startJobWithOptions",
+						"{{workFlowName}}"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "{{token}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getActALjobID_1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jobId;\r",
+							"let jsonBody = pm.response.json();\r",
+							"let isSkipRequired = true;\r",
+							"\r",
+							"//check if workFlow is present.If present then fetch the jobId.\r",
+							"jsonBody.forEach((i) => {\r",
+							"    if(i.name === \"LNAAS_CREATE_RESOURCE_ACT_AL_V1\" || i.name === \"LNAAS_DELETE_RESOURCE_ACT_AL_V1\"){\r",
+							"        jobId = i._id;\r",
+							"        isSkipRequired = false;\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"//checking flag isSkipRequired.If job Id not found.Then jump to getActALjobID_2 request.\r",
+							"if(isSkipRequired) {\r",
+							"    postman.setNextRequest(\"getActALjobID_2\");\r",
+							"}\r",
+							"\r",
+							"pm.collectionVariables.set(\"aljobId\",jobId);\r",
+							"//console.log(jobId);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"setTimeout(function(){}, [60000]);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"jobId\": \"{{SLjobId}}\",\r\n    \"status\": \"running\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://10.122.65.194:3000/Autopilot/fetchActiveJobsByJobId",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"Autopilot",
+						"fetchActiveJobsByJobId"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getActId1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonBody = pm.response.json();\r",
+							"//console.log(jsonBody)\r",
+							"pm.collectionVariables.set(\"actId\",jsonBody[0].variables.outgoing.result.response.actRequest.identifier_id);\r",
+							"//console.log(jsonBody[0].variables.outgoing.result.response.actRequest.identifier_id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://10.122.65.194:3000/workflow_engine/getTaskIterations/{{aljobId}}/4b37",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"workflow_engine",
+						"getTaskIterations",
+						"{{aljobId}}",
+						"4b37"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "actEMP_1",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n \"messages\": {\r\n \"response\": [\r\n \"<event> <messageType>E.ServiceDelivery.NetworkActivation.Activation.Event</messageType> <eventType>E.ServiceDelivery.NetworkActivation.Activation.Event</eventType> <eventTimestamp>2020-02-03T18:32:47.272Z</eventTimestamp> <securityHeader> <applicationKey>APPKEY873362017072013554883265664</applicationKey> </securityHeader> <correlationId>66666222_74783833</correlationId> <messageId>EMP-202002031832507885548</messageId> <eventId>ef4cdeab-4f9b-406c-8378-ad9e3981cfd7</eventId> <messageSource>ACT</messageSource> <callBackURL>http://actip-dev-02:8081/ac-ip-confgen-rs/rs/request/bd37f409-ef59-4b96-a43f-e5f5fcd06d43</callBackURL> <businessKeys> <businessKey> <entity>Network</entity> <name>actID</name> <value>{{actId}}</value> </businessKey> </businessKeys> <attributes> <attribute> <name>status</name> <value>200</value> </attribute> </attributes> </event>\"\r\n ]\r\n }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://10.122.65.194:3000/AppEmp/actAsyncMessageHandler?token={{token}}",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"AppEmp",
+						"actAsyncMessageHandler"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "{{token}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getActALjobID_2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jobId;\r",
+							"let jsonBody = pm.response.json();\r",
+							"let count = 0;//count to check for act call.\r",
+							"//check if workFlow is present.If present then fetch the ACT jobId.\r",
+							"jsonBody.forEach((i) => {\r",
+							"  if((i.name === \"LNAAS_CREATE_RESOURCE_ACT_AL_V1\") || (i.name === \"LNAAS_DELETE_RESOURCE_ACT_AL_V1\")) {\r",
+							"        count = count + 1;\r",
+							"        if((pm.collectionVariables.get(\"aljobId\") !== i._id)) {\r",
+							"            jobId = i._id;\r",
+							"        }\r",
+							"  }\r",
+							"});\r",
+							"\r",
+							"//console.log(count);\r",
+							"// if in response there is only one act call then go to getResponsePayload\r",
+							"if(count === 1) { \r",
+							"    postman.setNextRequest(\"getResponsePayload\");\r",
+							"} else if (count !== 1) {\r",
+							"    //If ACT jobId is not presnt in response.Then, it means the flow got errored out before reaching ACT task.Throw error and stop execution. \r",
+							"    if(jobId === undefined) {\r",
+							"        postman.setNextRequest(null);\r",
+							"        throw new Error('This WorkFlow has not reached Act task');\r",
+							"    }\r",
+							"}\r",
+							"\r",
+							"pm.collectionVariables.set(\"aljobIdDia\",jobId);\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"setTimeout(function(){}, [60000]);\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"jobId\": \"{{SLjobId}}\",\r\n    \"status\": \"running\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://10.122.65.194:3000/Autopilot/fetchActiveJobsByJobId",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"Autopilot",
+						"fetchActiveJobsByJobId"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getActId2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonBody = pm.response.json();\r",
+							"//console.log(jsonBody)\r",
+							"pm.collectionVariables.set(\"actIdDia\",jsonBody[0].variables.outgoing.result.response.actRequest.identifier_id);\r",
+							"//console.log(jsonBody[0].variables.outgoing.result.response.actRequest.identifier_id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://10.122.65.194:3000/workflow_engine/getTaskIterations/{{aljobIdDia}}/4b37",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"workflow_engine",
+						"getTaskIterations",
+						"{{aljobIdDia}}",
+						"4b37"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "actEMP_2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n \"messages\": {\r\n \"response\": [\r\n \"<event> <messageType>E.ServiceDelivery.NetworkActivation.Activation.Event</messageType> <eventType>E.ServiceDelivery.NetworkActivation.Activation.Event</eventType> <eventTimestamp>2020-02-03T18:32:47.272Z</eventTimestamp> <securityHeader> <applicationKey>APPKEY873362017072013554883265664</applicationKey> </securityHeader> <correlationId>66666222_74783833</correlationId> <messageId>EMP-202002031832507885548</messageId> <eventId>ef4cdeab-4f9b-406c-8378-ad9e3981cfd7</eventId> <messageSource>ACT</messageSource> <callBackURL>http://actip-dev-02:8081/ac-ip-confgen-rs/rs/request/bd37f409-ef59-4b96-a43f-e5f5fcd06d43</callBackURL> <businessKeys> <businessKey> <entity>Network</entity> <name>actID</name> <value>{{actIdDia}}</value> </businessKey> </businessKeys> <attributes> <attribute> <name>status</name> <value>200</value> </attribute> </attributes> </event>\"\r\n ]\r\n }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://10.122.65.194:3000/AppEmp/actAsyncMessageHandler?token={{token}}",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"AppEmp",
+						"actAsyncMessageHandler"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "{{token}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getResponsePayload",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonBody = pm.response.json();\r",
+							"let statusCode = pm.response.code;\r",
+							"let workFlowName = JSON.parse(pm.collectionVariables.get(\"workFlowName\"));\r",
+							"\r",
+							"//if the work flow errored out after ACT call and before buildSuccessResponse.Then the response of this request is an empty array.If it is an empty array,then throw error and stop execution.\r",
+							"if ( pm.response.json().length === 0) {\r",
+							"    throw new Error('This WorkFlow stopped while execution');\r",
+							"}\r",
+							"\r",
+							"//console.log(workFlowName);\r",
+							"//console.log(jsonBody);\r",
+							"let status;\r",
+							"\r",
+							"//Fetch the status from response Payload.\r",
+							"if (workFlowName === \"LNAAS_CREATE_DIA_SERVICE_SL_V1\") {\r",
+							" status = jsonBody[0].variables.outgoing.responseObject.response.status;\r",
+							" //console.log(status);\r",
+							"} else if (workFlowName === \"LNAAS_DELETE_DIA_SERVICE_SL_V1\") {\r",
+							"    status = jsonBody[0].variables.outgoing.responseObject.response.status;\r",
+							"}\r",
+							"\r",
+							"// Flag for checking.\r",
+							"stop = false;\r",
+							"\r",
+							"//console.log(status);\r",
+							"\r",
+							"//Check the status from response payload.If Success then, assign stop as false.  \r",
+							"if (statusCode === 200 && status === \"success\") {\r",
+							"    stop = true; // only reaches this command if all tasks have passed\r",
+							"} \r",
+							"\r",
+							"//console.log(stop);\r",
+							"\r",
+							"//if status from response is Success then next request getFailureResponse is not executed.\r",
+							"if (stop) {\r",
+							"    if(pm.iterationData.toObject().senarioName === \"Create_Dia_with_Oline_Create_Senario\") {\r",
+							"        pm.globals.set(\"Create_Dia_with_Oline_Create_Senario\", true);\r",
+							"    } else if (pm.iterationData.toObject().senarioName === \"Create_Dia_with_Out_Oline_Create_Senario\") {\r",
+							"        pm.globals.set(\"Create_Dia_with_Out_Oline_Create_Senario\", true);\r",
+							"    } else if (pm.iterationData.toObject().senarioName === \"Delete_Dia_Senario\") {\r",
+							"        pm.globals.set(\"Delete_Dia_Senario\", true);\r",
+							"    }\r",
+							"    postman.setNextRequest(null) // don't process anymore requests\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"setTimeout(function(){}, [60000]);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://10.122.65.194:3000/workflow_engine/getTaskIterations/{{SLjobId}}/{{successResponseTaskId}}",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"workflow_engine",
+						"getTaskIterations",
+						"{{SLjobId}}",
+						"{{successResponseTaskId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getFailureResponse",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"setTimeout(function(){}, [60000]);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let jsonBody = pm.response.json();\r",
+							"\r",
+							"if(pm.iterationData.toObject().senarioName === \"Create_Dia_with_Oline_Create_Senario\") {\r",
+							"    pm.globals.set(\"Create_Dia_with_Oline_Create_Senario\", false);\r",
+							"} else if (pm.iterationData.toObject().senarioName === \"Create_Dia_with_Out_Oline_Create_Senario\") {\r",
+							"    pm.globals.set(\"Create_Dia_with_Out_Oline_Create_Senario\", false);\r",
+							"} else if (pm.iterationData.toObject().senarioName === \"Delete_Dia_Senario\") {\r",
+							"    pm.globals.set(\"Delete_Dia_Senario\", false);\r",
+							"}\r",
+							"//if the work flow errored out in the failure path.Then the response of this request is an empty array.If it is an empty array,then throw error and stop execution.\r",
+							"if ( pm.response.json().length === 0) {\r",
+							"    throw new Error('This WorkFlow stopped while execution');\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://10.122.65.194:3000/workflow_engine/getTaskIterations/{{SLjobId}}/{{failureResponseTaskId}}",
+					"protocol": "http",
+					"host": [
+						"10",
+						"122",
+						"65",
+						"194"
+					],
+					"port": "3000",
+					"path": [
+						"workflow_engine",
+						"getTaskIterations",
+						"{{SLjobId}}",
+						"{{failureResponseTaskId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "workFlowName",
+			"value": ""
+		},
+		{
+			"key": "jsonBody",
+			"value": ""
+		},
+		{
+			"key": "successResponseTaskId",
+			"value": ""
+		},
+		{
+			"key": "failureResponseTaskId",
+			"value": ""
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "SLjobId",
+			"value": ""
+		},
+		{
+			"key": "aljobId",
+			"value": ""
+		},
+		{
+			"key": "actId",
+			"value": ""
+		},
+		{
+			"key": "aljobIdDia",
+			"value": ""
+		},
+		{
+			"key": "actIdDia",
+			"value": ""
+		}
+	]
+}
